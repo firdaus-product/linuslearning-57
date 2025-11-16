@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ms-MY">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kemahiran Pemulihan: Operasi Tolak (Pembelajaran)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { box-sizing: border-box; }
+    .activity-card { min-height: 400px; }
+    .number-card { transition: all .3s ease; cursor: pointer; }
+    .number-card:hover { transform: scale(1.05); }
+    .dragging { opacity: .5; transform: rotate(5deg); }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      transition: all .3s ease;
+      min-width: 60px;
+      min-height: 60px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .drop-zone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
+
+    /* Salah */
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    .shake { animation: shake 0.5s ease; }
+
+    /* Zon sudah diisi */
+    .drop-zone-filled {
+      border-style: solid;
+      border-color: #4ade80;
+      background-color: #f0fdf4;
+    }
+    
+    /* Input Bentuk Lazim */
+    .lazim-input {
+      width: 4rem; height: 4rem; text-align: center;
+      font-size: 2.25rem; font-weight: bold;
+      border: 2px solid #cbd5e1; border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .lazim-input:focus {
+      border-color: #3b82f6; background-color: #eff6ff;
+      outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+    .lazim-input:disabled {
+      background-color: #f3f4f6; color: #9ca3af;
+      border-color: #e5e7eb;
+    }
+
+    /* Blok Visual */
+    .place-block {
+      display: inline-block;
+      margin: 2px;
+      transition: all 0.3s ease;
+    }
+    .block-ra { width: 50px; height: 50px; background-color: #3b82f6; border: 2px solid #2563eb; }
+    .block-pu { width: 12px; height: 50px; background-color: #22c55e; border: 2px solid #16a34a; }
+    .block-sa { width: 12px; height: 12px; background-color: #facc15; border: 2px solid #eab308; }
+    .block-removed { opacity: 0.2; background-color: #9ca3af; border-color: #6b7280; }
+
+  </style>
+</head>
+<body class="bg-gradient-to-br from-sky-50 to-blue-50 min-h-full">
+
+  <div class="bg-sky-100 border-b-4 border-sky-300 p-4 shadow-sm sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">➖</span>
+        <span id="info-text" class="text-lg font-semibold text-gray-800">
+          Pilih aktiviti untuk mula belajar operasi tolak!
+        </span>
+      </div>
+      <button id="speak-btn"
+              class="bg-sky-300 hover:bg-sky-400 text-sky-800 font-bold py-2 px-4 rounded-full text-xl transition-colors duration-200"
+              onclick="speakInfo()">
+        🔊
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto p-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 activity-card flex items-center justify-center">
+      <div id="activity-content" class="text-center w-full">
+        <div class="py-16">
+          <div class="text-6xl mb-4">🔢</div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-4">
+            Kemahiran Pemulihan: Operasi Tolak (1000)
+          </h2>
+          <p class="text-xl text-gray-600 mb-8">
+            Objektif: Tolak dua nombor tiga digit tanpa mengumpul semula.
+          </p>
+          <div class="text-4xl">👇</div>
+        </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Pilih Aktiviti</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <button onclick="loadActivity(1)"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          🧱 Visual Blok
+        </button>
+        <button onclick="loadActivity(2)"
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          📝 Bentuk Lazim
+        </button>
+        <button onclick="loadActivity(3)"
+                class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          📏 Garis Nombor
+        </button>
+        <button onclick="loadActivity(4)"
+                class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          📖 Cerita Matematik
+        </button>
+        <button onclick="loadActivity(5)"
+                class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          🧩 Padankan Jawapan
+        </button>
+      </div>
+
+      <div class="flex justify-center gap-4">
+        <button onclick="clearActivity()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-colors duration-200">
+          🧹 Bersih
+        </button>
+        <button onclick="nextActivity()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-colors duration-200">
+          ➡️ Seterusnya
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentActivity = 0;
+    let ttsEnabled = false;
+    let currentInfo = "Pilih aktiviti untuk mula belajar operasi tolak!";
+    let draggedElement = null;
+
+    /* ====== TTS (KEKAL) ====== */
+    function speak(text) {
+      if (!ttsEnabled) return;
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ms-MY';
+        u.rate = 0.9; u.pitch = 1.05;
+        const voices = window.speechSynthesis.getVoices();
+        const ms = voices.find(v => v.lang === 'ms-MY' || v.lang?.startsWith('ms'));
+        if (ms) u.voice = ms;
+        window.speechSynthesis.speak(u);
+      }, 100);
+    }
+    function setInfo(text) { currentInfo = text; document.getElementById('info-text').textContent = text; }
+    function speakInfo() {
+      if (!ttsEnabled) {
+        ttsEnabled = true;
+        const btn = document.getElementById('speak-btn');
+        // Warna butang TTS diubah
+        btn.classList.add('bg-green-300', 'hover:bg-green-400');
+        btn.classList.remove('bg-sky-300', 'hover:bg-sky-400');
+      }
+      speak(currentInfo);
+    }
+
+    /* ====== DnD helpers (KEKAL) ====== */
+    function dragStart(e) { draggedElement = e.target; e.target.classList.add('dragging'); }
+    function dragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-over')); }
+    function allowDrop(e) { e.preventDefault(); if (e.currentTarget.classList.contains('drop-zone')) e.currentTarget.classList.add('drag-over'); }
+    function dragLeave(e) { if (e.currentTarget.classList.contains('drop-zone')) e.currentTarget.classList.remove('drag-over'); }
+
+    /* ====== Router (DIUBAH) ====== */
+    function loadActivity(n) {
+      currentActivity = n;
+      const content = document.getElementById('activity-content');
+      // Panggil fungsi aktiviti baharu
+      if (n === 1) return loadVisualBlockActivity(content);
+      if (n === 2) return loadBentukLazimActivity(content);
+      if (n === 3) return loadNumberLineActivity(content);
+      if (n === 4) return loadStoryProblemActivity(content);
+      if (n === 5) return loadMatchingActivity(content);
+    }
+
+    /* ====== (BARU) Aktiviti 1: Visual Blok ====== */
+    // Pembolehubah global untuk aktiviti 1
+    let vb = { ra: 0, pu: 0, sa: 0, tolakRa: 0, tolakPu: 0, tolakSa: 0 };
+    
+    function loadVisualBlockActivity(content) {
+      setInfo("Jom buang blok! Klik butang Tolak Ratus, Tolak Puluh, dan Tolak Sa.");
+      vb = { ra: 3, pu: 6, sa: 9, tolakRa: 1, tolakPu: 2, tolakSa: 6 };
+      
+      let html = `
+        <h3 class="text-2xl font-bold text-blue-600 mb-4">🧱 Aktiviti Visual Blok</h3>
+        <div class="text-4xl font-bold mb-6">${vb.ra}${vb.pu}${vb.sa} - ${vb.tolakRa}${vb.tolakPu}${vb.tolakSa} = ?</div>
+        
+        <div class="grid grid-cols-3 gap-4 mb-6 text-left">
+          <div>
+            <h4 class="font-bold text-lg">Ratus (${vb.ra})</h4>
+            <div id="vb-ra" class="p-2 bg-blue-50 border border-blue-200 rounded-lg min-h-32">
+              ${Array(vb.ra).fill('<div class="place-block block-ra"></div>').join('')}
+            </div>
+            <button id="btn-ra" onclick="vbTolak('ra')" class="mt-2 w-full bg-blue-500 text-white p-2 rounded-lg">Tolak ${vb.tolakRa} Ratus</button>
+          </div>
+          <div>
+            <h4 class="font-bold text-lg">Puluh (${vb.pu})</h4>
+            <div id="vb-pu" class="p-2 bg-green-50 border border-green-200 rounded-lg min-h-32">
+              ${Array(vb.pu).fill('<div class="place-block block-pu"></div>').join('')}
+            </div>
+            <button id="btn-pu" onclick="vbTolak('pu')" class="mt-2 w-full bg-green-500 text-white p-2 rounded-lg">Tolak ${vb.tolakPu} Puluh</button>
+          </div>
+          <div>
+            <h4 class="font-bold text-lg">Sa (${vb.sa})</h4>
+            <div id="vb-sa" class="p-2 bg-yellow-50 border border-yellow-200 rounded-lg min-h-32 flex flex-wrap">
+              ${Array(vb.sa).fill('<div class="place-block block-sa"></div>').join('')}
+            </div>
+            <button id="btn-sa" onclick="vbTolak('sa')" class="mt-2 w-full bg-yellow-500 text-white p-2 rounded-lg">Tolak ${vb.tolakSa} Sa</button>
+          </div>
+        </div>
+        <div id="vb-result" class="mt-6 p-4 bg-blue-50 rounded-lg text-center text-xl font-bold text-blue-800 min-h-16">
+          Baki: ...
+        </div>
+      `;
+      content.innerHTML = html;
+    }
+
+    function vbTolak(jenis) {
+      let selector, tolakCount, btnId;
+      if (jenis === 'ra') { selector = '#vb-ra .block-ra'; tolakCount = vb.tolakRa; btnId = 'btn-ra'; }
+      if (jenis === 'pu') { selector = '#vb-pu .block-pu'; tolakCount = vb.tolakPu; btnId = 'btn-pu'; }
+      if (jenis === 'sa') { selector = '#vb-sa .block-sa'; tolakCount = vb.tolakSa; btnId = 'btn-sa'; }
+
+      const blocks = document.querySelectorAll(selector + ':not(.block-removed)');
+      for (let i = 0; i < tolakCount; i++) {
+        if (blocks[i]) blocks[i].classList.add('block-removed');
+      }
+      
+      const btn = document.getElementById(btnId);
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'bg-gray-400');
+      btn.textContent = 'Selesai ✔️';
+
+      // Semak jika semua butang selesai
+      if (document.getElementById('btn-ra').disabled && 
+          document.getElementById('btn-pu').disabled && 
+          document.getElementById('btn-sa').disabled) {
+        
+        const bakiRa = vb.ra - vb.tolakRa;
+        const bakiPu = vb.pu - vb.tolakPu;
+        const bakiSa = vb.sa - vb.tolakSa;
+        const jawapan = `${bakiRa}${bakiPu}${bakiSa}`;
+        
+        document.getElementById('vb-result').innerHTML = `Baki: ${bakiRa} Ratus, ${bakiPu} Puluh, ${bakiSa} Sa = <span class="text-3xl">${jawapan}</span>`;
+        const msg = `Syabas! ${vb.ra}${vb.pu}${vb.sa} tolak ${vb.tolakRa}${vb.tolakPu}${vb.tolakSa} sama dengan ${jawapan}`;
+        setInfo(msg); speak(msg);
+      } else {
+        const msg = `Bagus! ${tolakCount} ${jenis} telah ditolak.`;
+        setInfo(msg); speak(msg);
+      }
+    }
+
+    /* ====== (BARU) Aktiviti 2: Bentuk Lazim ====== */
+    function loadBentukLazimActivity(content) {
+      setInfo("Sila isi jawapan di kotak dari kanan (Sa) ke kiri (Ratus).");
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-green-600 mb-6">📝 Aktiviti Bentuk Lazim</h3>
+        <div class="inline-grid grid-cols-3 gap-x-2" style="font-family: monospace;">
+          <div class="text-sm text-gray-500">Ratus</div>
+          <div class="text-sm text-gray-500">Puluh</div>
+          <div class="text-sm text-gray-500">Sa</div>
+          
+          <div class="text-6xl font-bold">3</div>
+          <div class="text-6xl font-bold">6</div>
+          <div class="text-6xl font-bold">9</div>
+          
+          <div class="text-6xl font-bold flex items-center">
+            <span class="text-4xl text-red-500 mr-2">-</span> 1
+          </div>
+          <div class="text-6xl font-bold">2</div>
+          <div class="text-6xl font-bold">6</div>
+        </div>
+        
+        <hr class="max-w-xs mx-auto border-t-4 border-gray-900 my-3">
+        
+        <div class="inline-grid grid-cols-3 gap-x-2">
+          <input type="text" id="ans-ra" maxlength="1" class="lazim-input" oninput="checkLazim('ra', event)" disabled>
+          <input type="text" id="ans-pu" maxlength="1" class="lazim-input" oninput="checkLazim('pu', event)" disabled>
+          <input type="text" id="ans-sa" maxlength="1" class="lazim-input" oninput="checkLazim('sa', event)">
+        </div>
+        
+        <div id="lazim-result" class="mt-6 p-4 bg-green-50 rounded-lg text-center text-xl font-bold text-green-800 min-h-16">
+          Mula dengan lajur Sa...
+        </div>
+      `;
+      // Fokus pada input 'Sa'
+      setTimeout(() => document.getElementById('ans-sa').focus(), 100);
+    }
+    
+    function checkLazim(jenis, e) {
+      const el = e.target;
+      el.classList.remove('shake');
+      
+      if (jenis === 'sa') {
+        if (el.value === '3') {
+          setInfo("Betul! 9 tolak 6 sama dengan 3. Sekarang lajur Puluh.");
+          el.disabled = true;
+          const puEl = document.getElementById('ans-pu');
+          puEl.disabled = false;
+          puEl.focus();
+        } else {
+          el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 500);
+        }
+      } 
+      else if (jenis === 'pu') {
+        if (el.value === '4') {
+          setInfo("Betul! 6 tolak 2 sama dengan 4. Sekarang lajur Ratus.");
+          el.disabled = true;
+          const raEl = document.getElementById('ans-ra');
+          raEl.disabled = false;
+          raEl.focus();
+        } else {
+          el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 500);
+        }
+      }
+      else if (jenis === 'ra') {
+        if (el.value === '2') {
+          setInfo("Syabas! 3 tolak 1 sama dengan 2. Jawapan penuh 243!");
+          el.disabled = true;
+          document.getElementById('lazim-result').textContent = "Syabas! Jawapan: 243";
+          speak("Syabas! Jawapan penuh 243!");
+        } else {
+          el.classList.add('shake'); setTimeout(() => el.classList.remove('shake'), 500);
+        }
+      }
+    }
+
+    /* ====== (BARU) Aktiviti 3: Garis Nombor ====== */
+    // Pembolehubah global untuk aktiviti 3
+    let nl = { current: 369, steps: [100, 20, 6], stepIdx: 0 };
+
+    function loadNumberLineActivity(content) {
+      setInfo("Jom lompat ke belakang. Mula dengan tolak 100.");
+      nl = { current: 369, steps: [100, 20, 6], stepIdx: 0 };
+
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-purple-600 mb-4">📏 Aktiviti Garis Nombor</h3>
+        <div class="text-4xl font-bold mb-6">369 - 126 = ?</div>
+        
+        <div class="relative w-full max-w-lg mx-auto bg-gray-200 h-2 rounded-full mb-4">
+          <div id="nl-marker" class="absolute bg-purple-600 w-6 h-6 rounded-full -top-2" style="left: 100%; transition: left 1s ease;">
+             <span class="absolute -top-8 left-1/2 -translate-x-1/2 text-2xl font-bold" id="nl-label">${nl.current}</span>
+          </div>
+        </div>
+        
+        <div class="flex justify-center gap-4 mt-8">
+          <button id="nl-btn-0" onclick="nlLompat(0)" class="bg-purple-500 text-white p-3 rounded-lg text-lg">Lompat -${nl.steps[0]}</button>
+          <button id="nl-btn-1" onclick="nlLompat(1)" class="bg-purple-500 text-white p-3 rounded-lg text-lg opacity-30" disabled>Lompat -${nl.steps[1]}</button>
+          <button id="nl-btn-2" onclick="nlLompat(2)" class="bg-purple-500 text-white p-3 rounded-lg text-lg opacity-30" disabled>Lompat -${nl.steps[2]}</button>
+        </div>
+        
+        <div id="nl-result" class="mt-6 p-4 bg-purple-50 rounded-lg text-center text-xl font-bold text-purple-800 min-h-16">
+          Tekan butang 'Lompat -100'.
+        </div>
+      `;
+    }
+
+    function nlLompat(idx) {
+      if (idx !== nl.stepIdx) return; // Mesti ikut urutan
+      
+      const lompat = nl.steps[idx];
+      nl.current -= lompat;
+      nl.stepIdx++;
+      
+      // Update UI
+      document.getElementById('nl-label').textContent = nl.current;
+      
+      // Kiraan kasar peratusan untuk bar
+      let percent = (nl.current - 240) / (370 - 240) * 100; // Skala anggaran
+      document.getElementById('nl-marker').style.left = `${percent}%`;
+      
+      // Urus butang
+      const currentBtn = document.getElementById(`nl-btn-${idx}`);
+      currentBtn.disabled = true;
+      currentBtn.classList.add('opacity-30');
+      
+      if (nl.stepIdx < nl.steps.length) {
+        const nextBtn = document.getElementById(`nl-btn-${nl.stepIdx}`);
+        nextBtn.disabled = false;
+        nextBtn.classList.remove('opacity-30');
+        const msg = `Bagus! Baki ${nl.current}. Sekarang lompat -${nl.steps[nl.stepIdx]}.`;
+        document.getElementById('nl-result').textContent = msg;
+        setInfo(msg); speak(msg);
+      } else {
+        const msg = `Selesai! Baki akhir ialah ${nl.current}.`;
+        document.getElementById('nl-result').textContent = msg;
+        setInfo(msg); speak(msg);
+      }
+    }
+
+
+    /* ====== (BARU) Aktiviti 4: Cerita Matematik ====== */
+    // Pembolehubah global untuk aktiviti 4
+    let storyStep = 0;
+
+    function loadStoryProblemActivity(content) {
+      setInfo("Baca cerita ini. Tekan 'Seterusnya' untuk lihat langkah.");
+      storyStep = 1;
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-orange-600 mb-6">📖 Cerita Matematik</h3>
+        <div class="text-left max-w-lg mx-auto space-y-4">
+          
+          <div id="story-1" class="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <p class="text-xl text-gray-800">
+              Ali ada <strong>369</strong> biji guli.<br>
+              Dia beri <strong>126</strong> biji guli kepada kawannya.<br>
+              Berapakah <strong>baki</strong> guli Ali?
+            </p>
+          </div>
+          
+          <div id="story-2" class="p-4 bg-orange-50 border border-orange-200 rounded-lg hidden">
+            <h4 class="font-bold text-lg">Ayat Matematik:</h4>
+            <p class="text-3xl font-bold text-gray-800">
+              369 - 126 = ?
+            </p>
+            <p class="text-gray-600">Ini ialah operasi tolak.</p>
+          </div>
+          
+          <div id="story-3" class="p-4 bg-orange-50 border border-orange-200 rounded-lg hidden">
+            <h4 class="font-bold text-lg">Cara Selesaikan (Bentuk Lazim):</h4>
+            <div class="text-2xl font-bold text-gray-800" style="font-family: monospace; line-height: 1.2;">
+              &nbsp; 3 6 9 <br>
+              - 1 2 6 <br>
+              ------- <br>
+              &nbsp; 2 4 3 <br>
+            </div>
+            <p class="text-xl font-bold mt-2">Baki guli Ali ialah 243.</p>
+          </div>
+          
+          <button id="story-btn" onclick="nextStoryStep()" class="w-full bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg text-lg">
+            Seterusnya
+          </button>
+        </div>
+      `;
+    }
+    
+    function nextStoryStep() {
+      storyStep++;
+      if (storyStep === 2) {
+        document.getElementById('story-1').classList.add('opacity-50');
+        document.getElementById('story-2').classList.remove('hidden');
+        setInfo("Ayat matematik ialah 369 tolak 126.");
+        speak("Ayat matematik ialah 369 tolak 126.");
+      } 
+      else if (storyStep === 3) {
+        document.getElementById('story-2').classList.add('opacity-50');
+        document.getElementById('story-3').classList.remove('hidden');
+        document.getElementById('story-btn').textContent = 'Selesai! (Mula Semula)';
+        setInfo("Baki ialah 243. Ali ada 243 biji guli.");
+        speak("Baki ialah 243. Ali ada 243 biji guli.");
+      }
+      else {
+        loadStoryProblemActivity(document.getElementById('activity-content'));
+      }
+    }
+
+    /* ====== (BARU) Aktiviti 5: Padankan Jawapan ====== */
+    function loadMatchingActivity(content) {
+      setInfo("Seret jawapan di sebelah kanan ke soalan yang betul di sebelah kiri.");
+      const problems = [
+        { q: "584 - 123", a: "461" },
+        { q: "765 - 333", a: "432" },
+        { q: "298 - 105", a: "193" }
+      ];
+      const answers = [...problems.map(p => p.a)].sort(() => Math.random() - 0.5); // Rawak
+      
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-red-600 mb-6">🧩 Padankan Jawapan</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <div class="space-y-4">
+            <h4 class="text-lg font-semibold">Soalan (Letak di sini):</h4>
+            ${problems.map(p => `
+              <div class="flex items-center gap-2 bg-gray-100 p-4 rounded-lg">
+                <span class="text-xl font-semibold">${p.q} =</span>
+                <div class="drop-zone rounded-lg p-5 text-xl font-bold" 
+                     ondrop="dropOnMatch(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" 
+                     data-correct="${p.a}">
+                  ?
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          
+          <div class="space-y-4">
+            <h4 class="text-lg font-semibold">Jawapan (Seret dari sini):</h4>
+            <div id="answer-pool" class="flex flex-col gap-4">
+              ${answers.map(a => `
+                <div class="number-card bg-red-100 border-2 border-red-300 rounded-lg p-5 text-3xl font-bold text-red-800 cursor-move text-center"
+                     draggable="true" ondragstart="dragStart(event)" ondragend="dragEnd(event)" 
+                     data-number="${a}">
+                  ${a}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+        </div>
+      `;
+    }
+    
+    function dropOnMatch(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      if (!draggedElement) return;
+      
+      const draggedNumber = draggedElement.dataset.number;
+      const correctNumber = e.currentTarget.dataset.correct;
+      
+      if (draggedNumber === correctNumber) {
+        e.currentTarget.innerHTML = draggedNumber;
+        e.currentTarget.classList.add('drop-zone-filled', 'bg-green-100', 'text-green-800');
+        e.currentTarget.classList.remove('drop-zone');
+        e.currentTarget.removeAttribute('ondrop');
+        
+        draggedElement.remove(); 
+        draggedElement = null;
+        
+        const msg = `Betul! Jawapan ${draggedNumber} adalah tepat.`; 
+        setInfo(msg); speak(msg);
+        
+        // Semak jika selesai
+        if (document.querySelectorAll('#activity-content .drop-zone').length === 0) {
+          setInfo("Syabas! Semua jawapan dipadankan!");
+          speak("Syabas! Semua jawapan dipadankan!");
+        }
+      } else {
+        setInfo(`Bukan di situ. Jawapan itu tidak sepadan. Cuba lagi.`); 
+        speak(`Bukan di situ. Jawapan itu tidak sepadan. Cuba lagi.`);
+        e.currentTarget.classList.add('shake'); 
+        setTimeout(() => e.currentTarget.classList.remove('shake'), 500);
+      }
+    }
+
+
+    /* ====== Kawalan Umum (DIUBAH) ====== */
+    function clearActivity() {
+      currentActivity = 0;
+      // Teks skrin utama diubah
+      document.getElementById('activity-content').innerHTML = `
+        <div class="text-center py-16">
+          <div class="text-6xl mb-4">🔢</div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-4">Kemahiran Pemulihan: Operasi Tolak (1000)</h2>
+          <p class="text-xl text-gray-600 mb-8">Objektif: Tolak dua nombor tiga digit tanpa mengumpul semula.</p>
+          <div class="text-4xl">👇</div>
+        </div>
+      `;
+      setInfo("Pilih aktiviti untuk mula belajar operasi tolak!");
+    }
+    
+    function nextActivity() {
+      if (currentActivity === 0) return loadActivity(1);
+      if (currentActivity < 5) return loadActivity(currentActivity + 1);
+      return loadActivity(1);
+    }
+
+    // Kekalkan TTS resume (KEKAL)
+    if ('speechSynthesis' in window) {
+      setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 1000);
+    }
+  </script>
+</body>
+</html>
